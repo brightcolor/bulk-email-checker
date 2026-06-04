@@ -1,0 +1,43 @@
+# Version control
+.git
+.gitignore
+
+# Node
+node_modules
+
+# Dev environment
+.env
+.env.local
+.env.*.local
+*.env
+
+# Tests
+tests
+phpunit.xml
+.phpunit.cache
+
+# Dev tools
+.editorconfig
+.idea
+.vscode
+*.log
+*.sql
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+docker/
+
+# Laravel development caches
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+bootstrap/cache/*
+
+# Uploads (runtime data, not part of image)
+storage/app/
+
+# Build artifacts
+public/build
+public/hot

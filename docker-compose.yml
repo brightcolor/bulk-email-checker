@@ -1,0 +1,97 @@
+services:
+
+  # ── Application (PHP-FPM + Nginx + Queue Worker in one container) ────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: bulk-email-checker:latest
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8000}:80"
+    env_file:
+      - .env
+    environment:
+      APP_ENV: "${APP_ENV:-production}"
+      APP_URL: "${APP_URL:-http://localhost:8000}"
+      DB_CONNECTION: "${DB_CONNECTION:-mysql}"
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: "${DB_DATABASE:-bulk_checker}"
+      DB_USERNAME: "${DB_USERNAME:-bulk_checker}"
+      DB_PASSWORD: "${DB_PASSWORD:-secret}"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      QUEUE_CONNECTION: "${QUEUE_CONNECTION:-redis}"
+      CACHE_STORE: "${CACHE_STORE:-redis}"
+      SESSION_DRIVER: "${SESSION_DRIVER:-redis}"
+    volumes:
+      - app_storage:/var/www/html/storage
+      - app_uploads:/var/www/html/storage/app/local
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/up"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
+    networks:
+      - bulk-checker
+
+  # ── MySQL ─────────────────────────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-rootsecret}"
+      MYSQL_DATABASE: "${DB_DATABASE:-bulk_checker}"
+      MYSQL_USER: "${DB_USERNAME:-bulk_checker}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:-secret}"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "--password=${DB_ROOT_PASSWORD:-rootsecret}"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+    networks:
+      - bulk-checker
+
+  # ── Redis ─────────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - bulk-checker
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  app_storage:
+    driver: local
+  app_uploads:
+    driver: local
+
+networks:
+  bulk-checker:
+    driver: bridge

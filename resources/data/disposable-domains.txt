@@ -1,0 +1,33 @@
+# Built-in disposable email domain list
+# Add custom domains below or replace this file with a more comprehensive list
+mailinator.com
+guerrillamail.com
+guerrillamail.net
+guerrillamail.org
+guerrillamail.biz
+guerrillamail.de
+sharklasers.com
+guerrillamailblock.com
+grr.la
+guerrillamail.info
+spam4.me
+yopmail.com
+yopmail.fr
+trashmail.com
+trashmail.at
+trashmail.io
+trashmail.me
+trashmail.net
+trashmail.org
+maildrop.cc
+dispostable.com
+fakeinbox.com
+tempmail.com
+temp-mail.org
+throwaway.email
+mailnull.com
+spamgourmet.com
+discard.email
+spambox.us
+emailondeck.com
+getairmail.com

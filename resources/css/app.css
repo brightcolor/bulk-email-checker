@@ -1,0 +1,31 @@
+/* OverlayScrollbars (required by AdminLTE 4) */
+@import '~overlayscrollbars/styles/overlayscrollbars.css';
+
+/* Bootstrap 5 */
+@import '~bootstrap/dist/css/bootstrap.min.css';
+
+/* FontAwesome Free */
+@import '~@fortawesome/fontawesome-free/css/all.min.css';
+
+/* AdminLTE 4 */
+@import '~admin-lte/dist/css/adminlte.min.css';
+
+/* Custom overrides */
+body {
+    font-size: 0.9rem;
+}
+
+.content-wrapper {
+    min-height: calc(100vh - 56px);
+}
+
+.badge-valid     { background-color: #198754 !important; color: #fff !important; }
+.badge-invalid   { background-color: #dc3545 !important; color: #fff !important; }
+.badge-risky     { background-color: #ffc107 !important; color: #212529 !important; }
+.badge-unknown   { background-color: #6c757d !important; color: #fff !important; }
+.badge-disposable { background-color: #212529 !important; color: #fff !important; }
+.badge-catch_all { background-color: #0dcaf0 !important; color: #000 !important; }
+.badge-role_account { background-color: #ffc107 !important; color: #212529 !important; }
+.badge-syntax_error { background-color: #dc3545 !important; color: #fff !important; }
+.badge-mx_error  { background-color: #dc3545 !important; color: #fff !important; }
+.badge-smtp_error { background-color: #6c757d !important; color: #fff !important; }
