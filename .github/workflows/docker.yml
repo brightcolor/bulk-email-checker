@@ -1,0 +1,128 @@
+name: Build & Push Docker Image
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    tags:
+      - "v*.*.*"
+  pull_request:
+    branches:
+      - master
+      - main
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # ── Job 1: PHP tests ────────────────────────────────────────────────────────
+  test:
+    name: PHP Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: pdo, pdo_sqlite, sqlite3, mbstring, openssl, zip, curl, fileinfo
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Copy .env for testing
+        run: cp .env.example .env
+
+      - name: Generate app key
+        run: php artisan key:generate
+
+      - name: Run tests
+        run: php artisan test --stop-on-failure
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ":memory:"
+          QUEUE_CONNECTION: sync
+          CACHE_STORE: array
+          SESSION_DRIVER: array
+
+  # ── Job 2: Build & push Docker image ────────────────────────────────────────
+  build-push:
+    name: Build & Push
+    runs-on: ubuntu-latest
+    needs: test
+    # Only push on master/main or version tags — not on PRs
+    if: github.event_name != 'pull_request'
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Extracts metadata for Docker tags and labels
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            # latest on default branch
+            type=raw,value=latest,enable={{is_default_branch}}
+            # short git SHA (always)
+            type=sha,prefix=sha-,format=short
+            # semver tags: v1.2.3 → 1.2.3, 1.2, 1
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            # branch name on non-tag pushes
+            type=ref,event=branch
+          labels: |
+            org.opencontainers.image.title=Bulk Email Checker
+            org.opencontainers.image.description=SaaS bulk email verification platform
+            org.opencontainers.image.vendor=brightcolor
+
+      # Cache Docker layers between builds (speeds up repeated builds significantly)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: production
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # GitHub Actions cache (layer caching between runs)
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # Build for amd64 + arm64 (works on Apple Silicon too)
+          platforms: linux/amd64,linux/arm64
+          provenance: false
+
+      - name: Image digest
+        run: echo "Published ${{ steps.meta.outputs.tags }}"
