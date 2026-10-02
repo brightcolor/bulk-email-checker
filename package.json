@@ -14,7 +14,7 @@
         "chart.js": "^4.4.8"
     },
     "devDependencies": {
-        "concurrently": "^9.0.1",
+        "concurrently": "^9.2.4",
         "laravel-vite-plugin": "^3.1",
         "vite": "^8.0.0"
     }
